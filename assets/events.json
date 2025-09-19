@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "title": "Cubbon Park Cleanup Drive",
+    "organization": "Green Bangalore Initiative",
+    "date": "2025-10-12",
+    "spots": 20,
+    "tags": [
+      "environment",
+      "cleanup",
+      "outdoors"
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Teach English Weekend Camp",
+    "organization": "Vidya Foundation",
+    "date": "2025-11-05",
+    "spots": 15,
+    "tags": [
+      "education",
+      "children",
+      "teaching"
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Pet Adoption Fair Support",
+    "organization": "Charlie's Animal Rescue Centre",
+    "date": "2025-10-25",
+    "spots": 25,
+    "tags": [
+      "animals",
+      "welfare",
+      "adoption"
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Community Kitchen Food Prep",
+    "organization": "Akshaya Patra",
+    "date": "2025-11-18",
+    "spots": 10,
+    "tags": [
+      "community",
+      "food drive",
+      "welfare"
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Lalbagh Botanical Garden Planting",
+    "organization": "Green Bangalore Initiative",
+    "date": "2025-12-01",
+    "spots": 30,
+    "tags": [
+      "environment",
+      "planting",
+      "outdoors"
+    ]
+  }
+]

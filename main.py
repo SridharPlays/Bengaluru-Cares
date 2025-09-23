@@ -25,7 +25,6 @@ if 'page' not in st.session_state:
 def send_confirmation_email(user_name, user_email, event):
     """Sends a confirmation email to the user after they sign up for an event."""
     try:
-        # Get sender credentials from Streamlit secrets
         sender_email = st.secrets["email"]
         password = st.secrets["password"]
 
@@ -60,11 +59,9 @@ def send_confirmation_email(user_name, user_email, event):
             server.sendmail(sender_email, [user_email], msg.as_string())
         return True
     except Exception as e:
-        # Using st.error for visibility, but in production you might log this
         st.error(f"Failed to send email. Error: {e}")
         return False
 
-# Reusable Functions
 def display_event_card(event, col):
     with col:
         with st.container(border=True):
@@ -106,9 +103,9 @@ user_name_input = st.sidebar.text_input("Enter your name", key="name_input")
 user_email_input = st.sidebar.text_input("Enter your email", key="email_input")
 
 if st.sidebar.button("Log In"):
-    if user_name_input and user_email_input: # Check for both name and email
+    if user_name_input and user_email_input:
         st.session_state.user_name = user_name_input
-        st.session_state.user_email = user_email_input # Store email in session state
+        st.session_state.user_email = user_email_input
         st.toast(f"Welcome, {st.session_state.user_name}!")
         st.rerun()
     else:

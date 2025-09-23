@@ -1,6 +1,9 @@
 import streamlit as st
 import datetime
 import event_manager
+import smtplib
+from email.mime.text import MIMEText
+from email.utils import formataddr
 
 # Page Configuration
 st.set_page_config(
@@ -10,17 +13,59 @@ st.set_page_config(
 )
 
 # Initialize Session State
-# This is like a browser cookie, remembering info for a user's session.
 if 'user_name' not in st.session_state:
     st.session_state.user_name = None
+if 'user_email' not in st.session_state:
+    st.session_state.user_email = None
 if 'enrolled_events' not in st.session_state:
     st.session_state.enrolled_events = []
 if 'page' not in st.session_state:
     st.session_state.page = "All Events"
 
+def send_confirmation_email(user_name, user_email, event):
+    """Sends a confirmation email to the user after they sign up for an event."""
+    try:
+        # Get sender credentials from Streamlit secrets
+        sender_email = st.secrets["email"]
+        password = st.secrets["password"]
+
+        sender_name = "Bengaluru Cares"
+
+        # Create the email body
+        subject = f"Confirmation: You're signed up for {event['title']}!"
+        body = f"""
+        Hi {user_name},
+
+        This is a confirmation that you have successfully enrolled in the following event:
+
+        Event: {event['title']}
+        Organization: {event['organization']}
+        Date: {event['date']}
+
+        Thank you for volunteering with Bengaluru Cares! We look forward to seeing you there.
+
+        Best,
+        The Bengaluru Cares Team
+        """
+
+        # Create the email message
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From'] = formataddr((sender_name, sender_email))
+        msg['To'] = user_email
+
+        # Connect to Gmail SMTP server and send email
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, [user_email], msg.as_string())
+        return True
+    except Exception as e:
+        # Using st.error for visibility, but in production you might log this
+        st.error(f"Failed to send email. Error: {e}")
+        return False
+
 # Reusable Functions
 def display_event_card(event, col):
-    """A reusable function to display an event card."""
     with col:
         with st.container(border=True):
             st.subheader(event['title'])
@@ -32,25 +77,42 @@ def display_event_card(event, col):
             
             st.write("")
             
-            # Sign up logic
             if st.session_state.user_name:
                 if event['id'] in st.session_state.enrolled_events:
                     st.success("✅ You are enrolled!")
                 else:
                     if st.button("Sign Up", key=f"signup_{event['id']}", type="primary"):
                         st.session_state.enrolled_events.append(event['id'])
-                        st.toast(f"🎉 Enrolled in {event['title']}!", icon="✅")
-                        st.rerun() # Refresh the page to update the button status
+                        
+                        # Send confirmation email
+                        email_sent = send_confirmation_email(
+                            user_name=st.session_state.user_name,
+                            user_email=st.session_state.user_email,
+                            event=event
+                        )
+                        
+                        if email_sent:
+                            st.toast(f"🎉 Enrolled! A confirmation email has been sent.", icon="✅")
+                        else:
+                            st.toast(f"Enrolled, but we couldn't send a confirmation email.", icon="⚠️")
+                        
+                        st.rerun()
             else:
                 st.warning("Please log in to sign up.")
 
-# Sidebar for Login & Navigation
 st.sidebar.title("Welcome! 👋")
-user_name_input = st.sidebar.text_input("Enter your name to log in", key="login_input")
+st.sidebar.header("Login")
+user_name_input = st.sidebar.text_input("Enter your name", key="name_input")
+user_email_input = st.sidebar.text_input("Enter your email", key="email_input")
+
 if st.sidebar.button("Log In"):
-    st.session_state.user_name = user_name_input
-    st.toast(f"Welcome, {st.session_state.user_name}!")
-    st.rerun()
+    if user_name_input and user_email_input: # Check for both name and email
+        st.session_state.user_name = user_name_input
+        st.session_state.user_email = user_email_input # Store email in session state
+        st.toast(f"Welcome, {st.session_state.user_name}!")
+        st.rerun()
+    else:
+        st.sidebar.warning("Please enter both your name and email.")
 
 if st.session_state.user_name:
     st.sidebar.success(f"Logged in as **{st.session_state.user_name}**")
@@ -64,7 +126,6 @@ st.session_state.page = page
 if st.session_state.page == "All Events":
     st.title("🤝 Bengaluru Cares: All Events")
     all_events = event_manager.load_events()
-    # Sort events by date using a lambda function
     all_events.sort(key=lambda x: x['date'])
 
     cols = st.columns(2)
@@ -87,7 +148,7 @@ elif st.session_state.page == "My Events":
     else:
         all_events = event_manager.load_events()
         my_events = [event for event in all_events if event['id'] in st.session_state.enrolled_events]
-        my_events.sort(key=lambda x: x['date']) # Sort by date
+        my_events.sort(key=lambda x: x['date'])
 
         cols = st.columns(2)
         for i, event in enumerate(my_events):
@@ -97,13 +158,11 @@ elif st.session_state.page == "My Events":
 elif st.session_state.page == "Add an Event":
     st.title("✍️ Add a New Volunteer Event")
     
-    # Simple password protection for this feature
     password = st.text_input("Enter Admin Password", type="password")
-    if password == "admin123": # You can change this password
+    if password == "admin123":
         with st.form(key="event_form", clear_on_submit=True):
             st.write("Fill out the details below to add a new event.")
             
-            # Form fields
             title = st.text_input("Event Title*")
             organization = st.text_input("Organization Name*")
             date = st.date_input("Date*")
